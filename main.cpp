@@ -18,7 +18,8 @@ using namespace std;
 // FUNCTION PROTOTYPES
 void insert(Node* &root, Node* current,  Node* newnode);
 void print(Node* current, int numTabs);
-void traverse(Node* current, int searchkey);
+bool traverse(Node* current, int searchkey);
+void remove(Node* &root, Node* current, Node* parent, int searchkey);
 
 int main()
 {
@@ -96,7 +97,20 @@ int main()
       else if (strcmp(input, "remove") == 0)
         {
 	  cout << "What number are you trying to remove?" << endl;
-	  
+	  int searchkey = 0; // this is the number we're trying to remove
+	  cin >> searchkey;
+	  cin.ignore(max, '\n');
+
+	  // we must make sure the value we want to remove is in the tree.
+	  if (!traverse(root, searchkey))
+	    {
+	      cout << "This value is not in the binary tree." << endl;
+	    }
+	  else
+	    {
+	      remove(root, root, root, searchkey);
+	      print(root, 0);
+	    }
         }
       else if (strcmp(input, "print") == 0)
         {
@@ -104,11 +118,20 @@ int main()
         }
       else if (strcmp(input, "search") == 0)
         {
+	  cout << endl;
 	  cout << "Which number are you trying to find?" << endl;
 	  int searchkey = 0; // this is the number we are trying to find
 	  cin >> searchkey;
 	  cin.ignore(max, '\n');
-	  traverse(root, searchkey);
+	  bool found = traverse(root, searchkey);
+	  if (found)
+	    {
+	      cout << "This value exists in the binary tree." << endl;
+	    }
+	  else
+	    {
+	      cout << "This value does not exist in the binary tree." << endl;
+	    }
         }
     }
 
@@ -178,6 +201,217 @@ void insert(Node* &root, Node* current, Node* newnode)
 }
 
 /**
+ * This function, given a searchkey, removes the requested node from the 
+ * binary tree.
+ * If the node is question has no children, the node is simply deleted.
+ * If the node has one child, the child is adopted by the grandparent.
+ * If the node has two children, we must find the next largest node.
+ * This means we go to the right child, then as left as possible. The
+ * left descendant replaces the original node. The left descendant's child,
+ * who should be a right child, is then adopted by its grandparent. 
+ */
+
+void remove(Node* &root, Node* current, Node* parent, int searchkey)
+{
+  // This returns if the searchkey isn't found
+  // This shouldn't happen because we have built in a searchkey check
+  // up in main
+  if (current == NULL)
+    {
+      return;
+    }
+  
+  // we have found the node to remove
+  if (searchkey == current->getValue())
+    {
+      cout << "node to remove: " << current->getValue() << endl;
+
+      // this node has no children; we can just delete it
+      if (current->getLeft() == NULL &&
+	  current->getRight() == NULL)
+      {
+	cout << "this node has no children" << endl;
+
+	// the root is the only thing in the tree
+	if (current == root)
+	  {
+	    root = NULL; // the tree is now empty
+	  }
+	// current node itself is a left child
+	if (parent->getLeft() == current)
+	  {
+	    parent->setLeft(NULL);
+	  }
+	// current node itself is a right child;
+	else if (parent->getRight() == current)
+	  {
+	    parent->setRight(NULL);
+	  }
+	Node* temp = current;
+	delete temp;
+      }
+
+      // if the node has one child
+      else if (current->getLeft() == NULL || current->getRight() == NULL)
+	{
+	  cout << "this node has one child" << endl;
+	  // this is the current node's non-null child
+	  // this child will be adopted by current node's parent
+	  Node* child = NULL;
+
+	  // determine which child is not null
+	  if (current->getLeft() != NULL)
+	    {
+	      child = current->getLeft();
+	    }
+	  else if (current->getRight() != NULL)
+	    {
+	      child = current->getRight();
+	    }
+
+	  // if the node to be removed is the root
+	  if (current == root)
+	    {
+	      // we cannot just delete the root since it's by reference
+	      Node* temp = current;
+	      root = child;
+	      delete temp;
+	    }
+	  else // the node to be removed isn't the root
+	    {
+	      // adopt the child (if the current node is not the root)
+	      if (parent->getLeft() == current)
+		{
+		  parent->setLeft(child);
+		}
+	      else if (parent->getRight() == current)
+		{
+		  parent->setRight(child);
+		}
+
+	      Node* temp = current;
+	      delete temp;
+	    }
+	}
+
+      // the node has two children
+      else if (current->getLeft() != NULL && current->getRight() != NULL)
+	{
+	  cout << "the node has two children" << endl;
+	  
+	  // we need to find the next largest node AND the next largest node's
+	  // parent
+	  // go to the right child, then go left as far as possible
+	  Node* nextLargest = current->getRight();
+	  Node* nextLargestParent = current;
+	  while (nextLargest->getLeft() != NULL)
+	    {
+	      nextLargestParent = nextLargest;
+	      nextLargest = nextLargest->getLeft();
+	    }
+
+	  cout << "next largest: " << nextLargest->getValue() << endl;
+	  cout << "next largest parent: " << nextLargestParent->getValue() << endl;
+
+	  /*
+	   * IMPORTANT NOTE:
+	   * If this while statement works, the node nextLargest should NOT
+	   * have another left child. It either has a right child or no
+	   * children.
+	   */
+
+	  // we must save the child's subtree
+	  // this is the child of the next largest node
+	  Node* nextChild = nextLargest->getRight();
+
+	  // next, we must disconnect the next largest from its subtree
+	  // this is because we are moving the next largest to replace
+	  // the current node and we don't want it to have baggage
+	  nextLargest->setRight(NULL);
+
+	  // nextLargest will replace where the parent node used to be
+	  if (current == root) // if the node to be removed is the root
+	    {
+	      Node* temp = current;
+
+	      // root is replaced by the next largest node
+	      root = nextLargest;
+
+	      // connect nextLargest to the root's original subtree
+	      if (current->getLeft() != nextLargest)
+                {
+                  nextLargest->setLeft(current->getLeft());
+                }
+              if (current->getRight() != nextLargest)
+                {
+                  nextLargest->setRight(current->getRight());
+                }
+
+	      // nextLargest's original parent will adopt nextLargest's child
+              if (nextLargestParent != current)
+                {
+                  nextLargestParent->setLeft(nextChild);
+                }
+
+	      delete temp;
+	    }
+	  else // the node to be removed isn't the root
+            {
+	      
+              // if the current node in question is a left child
+              if (parent->getLeft() == current)
+                {
+		  cout << "left child of parent" << endl;
+                  parent->setLeft(nextLargest);
+                }
+
+	      // the current node is a right child
+              else if (parent->getRight() == current)
+                {
+		  cout << "right child of parent" << endl;
+                  parent->setRight(nextLargest);
+		  print(root, 0);
+                }
+
+	      // the next largest has replaced the current node's position
+	      // we much attach the nextLargest to current node's subtree
+	      cout << "bridging hole of current node" << endl;
+	      if (current->getLeft() != nextLargest)
+		{
+		  nextLargest->setLeft(current->getLeft());
+		}
+	      if (current->getRight() != nextLargest)
+		{
+		  nextLargest->setRight(current->getRight());
+		}
+	      
+	      cout << "bridging next largest parent" << endl;
+	      // there is still an empty space between nextLargest's parent
+	      // and nextLargest's child; we must bridge that gap
+	      if (nextLargestParent != current)
+		{
+		  nextLargestParent->setLeft(nextChild);
+		}
+	      
+	      cout << "deleting current" << endl;
+              Node* temp = current;
+              delete temp;
+            }
+	  
+	}
+    }
+  else if (searchkey < current->getValue())
+    {
+      remove(root, current->getLeft(), current, searchkey);
+    }
+  else if (searchkey > current->getValue())
+    {
+      remove(root, current->getRight(), current, searchkey);
+    }
+  
+}
+
+/**
  * This function displays the binary search tree in a visual manner,
  * sideways.
  * 
@@ -212,31 +446,34 @@ void print(Node* current, int numTabs)
  *
  * @param current | the current node we're dealing with
  * @param searchkey | the value of the node we're trying to find
+ * @return bool | returns whether or not the searchkey was found.
  */
-void traverse(Node* current, int searchkey)
+bool traverse(Node* current, int searchkey)
 {
   // base case; we have not found the key
   if (current == NULL)
     {
-      cout << "This value does not exist in the tree." << endl;
-      return;
+      // we have walked through the tree without finding it
+      return false;
     }
   
   // the searchkey has been found
   else if (current->getValue() == searchkey)
     {
-      cout << "This value exists in the tree." << endl;
+      return true;
     }
   
   // RECURSIVE CASES
   // search key is less than current node; go left
   else if (searchkey < current->getValue())
     {
-      traverse(current->getLeft(), searchkey);
+      return traverse(current->getLeft(), searchkey);
     }
   // search key is greater than current node; go right
   else if (searchkey > current->getValue())
     {
-      traverse(current->getRight(), searchkey);
+      return traverse(current->getRight(), searchkey);
     }
+
+  return false;
 }
