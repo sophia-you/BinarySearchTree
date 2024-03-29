@@ -31,6 +31,7 @@ int main()
   // binary tree
   Node* root = NULL;
 
+  // the program will loop until the user wants to quit
   while (running)
     {
       // instructions
@@ -45,10 +46,14 @@ int main()
       cout << "To find a value in the tree, type 'search.'" << endl;
 
       cin.getline(input, max);
+
+      // stop running
       if (strcmp(input, "quit") == 0)
 	{
 	  running = false;
 	}
+
+      // insert nodes into the tree via console or file
       else if (strcmp(input, "insert") == 0)
 	{
 	  cout << "to insert via console, type 'console.'" << endl;
@@ -65,9 +70,9 @@ int main()
 	      for (int i = 0; i < numValues; i++)
 		{
 		  cin >> newnum;
-		  cout << newnum << endl;
 		  Node* newnode = new Node(newnum);
 		  insert(root, root, newnode);
+		  print(root, 0);
 		}
 	      
 	      cin.ignore(max, '\n');
@@ -84,16 +89,18 @@ int main()
 	      int newnum = 0; // temporarily keeps track of values
 	      while (inFile >> newnum)
 		{
-		  cout << "current number: " <<  newnum << endl;
 		  Node* newnode	= new Node(newnum);
                   insert(root, root, newnode);
-		  print(root, 0);
-		  
 		}
 
+	      // print out the tree
+	      print(root, 0);
+	      
 	      inFile.close();
 	    }
 	}
+
+      // prompt the user for a node to remove
       else if (strcmp(input, "remove") == 0)
         {
 	  cout << "What number are you trying to remove?" << endl;
@@ -112,10 +119,14 @@ int main()
 	      print(root, 0);
 	    }
         }
+
+      // displays the tree in a visual manner
       else if (strcmp(input, "print") == 0)
         {
 	  print(root, 0);
         }
+
+      // determines whether a node exists or not within a tree
       else if (strcmp(input, "search") == 0)
         {
 	  cout << endl;
@@ -152,11 +163,9 @@ int main()
  */
 void insert(Node* &root, Node* current, Node* newnode)
 {
-  cout << "in insert" << endl;
 
   if (root == NULL) // empty tree
     {
-      cout << "adding new node" << endl;
       root = newnode;
       return;
     }
@@ -164,16 +173,12 @@ void insert(Node* &root, Node* current, Node* newnode)
   // the new node is smaller than the parent; add to left branch
   else if (newnode->getValue() < current->getValue())
     {
-      cout << "to left branch" << endl;
       if (current->getLeft() == NULL) // reached a leaf
 	{
-	  cout << "adding new node in left branch" << endl;
 	  current->setLeft(newnode);
-	  cout << current->getLeft()->getValue() << endl;
 	}
       else // keep moving down the tree
 	{
-	  cout << "we have to continue (L)" << endl;
 	  insert(root, current->getLeft(), newnode);
 	}
     }
@@ -187,7 +192,6 @@ void insert(Node* &root, Node* current, Node* newnode)
 	}
       else // keep moving down the tree
 	{
-	  cout << "we have to continue (R)" << endl;
 	  insert(root, current->getRight(), newnode);
 	}
     }
@@ -196,7 +200,7 @@ void insert(Node* &root, Node* current, Node* newnode)
   else if (newnode->getValue() == current->getValue())
     {
       cout << "Two nodes of the same value cannot be added." << endl;
-      cout << "Therefore the node " << newnode->getValue() << " cannot be added" << endl;
+      cout << "Therefore the node " << newnode->getValue() << " cannot be addedmore than once." << endl;
     }
 }
 
@@ -224,13 +228,11 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
   // we have found the node to remove
   if (searchkey == current->getValue())
     {
-      cout << "node to remove: " << current->getValue() << endl;
 
       // this node has no children; we can just delete it
       if (current->getLeft() == NULL &&
 	  current->getRight() == NULL)
       {
-	cout << "this node has no children" << endl;
 
 	// the root is the only thing in the tree
 	if (current == root)
@@ -254,7 +256,6 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
       // if the node has one child
       else if (current->getLeft() == NULL || current->getRight() == NULL)
 	{
-	  cout << "this node has one child" << endl;
 	  // this is the current node's non-null child
 	  // this child will be adopted by current node's parent
 	  Node* child = NULL;
@@ -297,7 +298,6 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
       // the node has two children
       else if (current->getLeft() != NULL && current->getRight() != NULL)
 	{
-	  cout << "the node has two children" << endl;
 	  
 	  // we need to find the next largest node AND the next largest node's
 	  // parent
@@ -309,9 +309,6 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
 	      nextLargestParent = nextLargest;
 	      nextLargest = nextLargest->getLeft();
 	    }
-
-	  cout << "next largest: " << nextLargest->getValue() << endl;
-	  cout << "next largest parent: " << nextLargestParent->getValue() << endl;
 
 	  /*
 	   * IMPORTANT NOTE:
@@ -361,21 +358,17 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
               // if the current node in question is a left child
               if (parent->getLeft() == current)
                 {
-		  cout << "left child of parent" << endl;
                   parent->setLeft(nextLargest);
                 }
 
 	      // the current node is a right child
               else if (parent->getRight() == current)
                 {
-		  cout << "right child of parent" << endl;
-                  parent->setRight(nextLargest);
-		  print(root, 0);
+		  parent->setRight(nextLargest);
                 }
 
 	      // the next largest has replaced the current node's position
 	      // we much attach the nextLargest to current node's subtree
-	      cout << "bridging hole of current node" << endl;
 	      if (current->getLeft() != nextLargest)
 		{
 		  nextLargest->setLeft(current->getLeft());
@@ -385,7 +378,6 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
 		  nextLargest->setRight(current->getRight());
 		}
 	      
-	      cout << "bridging next largest parent" << endl;
 	      // there is still an empty space between nextLargest's parent
 	      // and nextLargest's child; we must bridge that gap
 	      if (nextLargestParent != current)
@@ -393,7 +385,6 @@ void remove(Node* &root, Node* current, Node* parent, int searchkey)
 		  nextLargestParent->setLeft(nextChild);
 		}
 	      
-	      cout << "deleting current" << endl;
               Node* temp = current;
               delete temp;
             }
